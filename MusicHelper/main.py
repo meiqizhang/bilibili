@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 # encoding=utf-8
 
-
+import os
+import sys
 import json
 import time
+from ffmpy import FFmpeg
 import logging
 import requests
 from bs4 import BeautifulSoup
@@ -77,7 +79,7 @@ def main():
                     if res_json["code"] == -460:
                         logging.info("request play page failed, msg=%s, try later..." % res_json["message"])
                         continue
-                else:
+                elif response.status_code == 200:
                     suffix = response.headers["Content-Type"]
                     if suffix.find("/") > 0:
                         suffix = suffix.split("/")[1]
@@ -85,7 +87,13 @@ def main():
                     with open(save_path, "wb") as fp:
                         fp.write(response.content)
                         logging.info("download success, saved as %s" % save_path)
+                    if suffix.upper() != "MP3":
+                        mp3_path = "%s/%s - %s.mp3" % (SAVE_PATH, title, author)
+                        ff = FFmpeg(inputs={save_path: None}, outputs={mp3_path: None}, global_options="-y")
+                        ff.run()
+                        os.remove(save_path)
 
 
 if __name__ == "__main__":
     main()
+
